@@ -1,0 +1,81 @@
+/* ============================================================
+   PhishShield design tokens
+   Concept: a signal-analysis console, not a marketing SaaS page.
+   Ink-navy base (not pure black), one warning-coral accent for
+   danger, teal for clear signal, amber for uncertain signal.
+   Monospace is used only where content is literally machine data
+   (URLs, IPs, hashes, scores) — never for decorative labels.
+   ============================================================ */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
+:root {
+  --ink: #11141b;
+  --ink-raised: #171b24;
+  --ink-line: #262b38;
+  --paper: #ece9e1;
+  --paper-dim: #a7a9b4;
+  --coral: #ff6b4a;
+  --coral-dim: #4a2c22;
+  --teal: #3ed7b8;
+  --teal-dim: #1d3833;
+  --amber: #f2b84b;
+  --amber-dim: #40331b;
+
+  --font-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
+  --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: 1.08;
+  margin: 0;
+}
+
+.mono { font-family: var(--font-mono); }
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+input, textarea {
+  font-family: var(--font-mono);
+}
+
+:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.shell {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+@media (max-width: 640px) {
+  .shell { padding: 0 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
