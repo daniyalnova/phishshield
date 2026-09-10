@@ -33,15 +33,50 @@ function safeParseJson(text) {
   }
 }
 
+// 503 (overloaded) and 429 (rate limited) are transient, server-side, and
+// worth one quick retry. Anything else (400 bad request, 401 bad key, 404
+// unknown model) is not going to succeed on a second try, so fail fast.
+function isRetryableStatus(status) {
+  return status === 503 || status === 429;
+}
+
+async function withRetry(fn, { retries = 1, baseDelayMs = 1500 } = {}) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const status = err.response?.status;
+      if (!isRetryableStatus(status) || attempt === retries) throw err;
+      const delay = baseDelayMs * (attempt + 1); // 1.5s, then 3s, ...
+      console.warn(
+        `AI provider returned ${status}, retrying in ${delay}ms (attempt ${attempt + 1}/${retries})…`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  throw lastErr;
+}
+
 async function callGemini(prompt) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
-  const model = process.env.GEMINI_MODEL || "gemini-1.5-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+  // gemini-flash-latest always points to Google's current Flash model, so
+  // this never goes stale the way a pinned version (e.g. gemini-2.5-flash)
+  // eventually will when Google retires it.
+  const model = process.env.GEMINI_MODEL || "gemini-flash-latest";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   const { data } = await axios.post(
     url,
     { contents: [{ parts: [{ text: prompt }] }] },
-    { timeout: 15000 }
+    {
+      headers: {
+        "x-goog-api-key": key,
+        "content-type": "application/json",
+      },
+      timeout: 30000,
+    }
   );
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
   return text ? safeParseJson(text) : null;
@@ -60,7 +95,7 @@ async function callOpenAI(prompt) {
     },
     {
       headers: { Authorization: `Bearer ${key}` },
-      timeout: 15000,
+      timeout: 30000,
     }
   );
   const text = data.choices?.[0]?.message?.content;
@@ -84,7 +119,7 @@ async function callClaude(prompt) {
         "anthropic-version": "2023-06-01",
         "content-type": "application/json",
       },
-      timeout: 15000,
+      timeout: 30000,
     }
   );
   const text = data.content?.[0]?.text;
@@ -97,9 +132,13 @@ export async function getAiVerdict({ url, domain, heuristics, riskScore }) {
 
   try {
     let result = null;
-    if (provider === "openai") result = await callOpenAI(prompt);
-    else if (provider === "claude") result = await callClaude(prompt);
-    else result = await callGemini(prompt);
+    if (provider === "openai") {
+      result = await withRetry(() => callOpenAI(prompt));
+    } else if (provider === "claude") {
+      result = await withRetry(() => callClaude(prompt));
+    } else {
+      result = await withRetry(() => callGemini(prompt));
+    }
 
     if (!result) return null;
 
@@ -110,7 +149,11 @@ export async function getAiVerdict({ url, domain, heuristics, riskScore }) {
       rawVerdict: result.verdict || "unknown",
     };
   } catch (err) {
-    console.error("AI analysis failed:", err.message);
+    const status = err.response?.status;
+    console.error(
+      `AI analysis failed${status ? ` (status ${status})` : ""}:`,
+      err.message
+    );
     return null;
   }
 }

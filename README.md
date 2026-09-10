@@ -125,6 +125,17 @@ Visit `http://localhost:5173`.
 Set `AI_PROVIDER` in `backend/.env` to `gemini`, `openai`, or `claude`, and fill in
 the matching key.
 
+> **Note on Gemini model names**: Google retires specific Gemini model versions
+> fairly often (the 1.5 series is already gone as of late 2026; expect today's
+> exact version number to be gone eventually too). This project defaults
+> `GEMINI_MODEL` to `gemini-flash-latest`, an alias Google keeps pointed at
+> whatever their current Flash model is, so you shouldn't need to touch this
+> again as versions roll forward. If `aiAnalysis` never appears in a scan result
+> and your backend log shows `AI analysis failed: Request failed with status
+> code 404`, something is still overriding that default with a retired model
+> name — check https://ai.google.dev/gemini-api/docs/models for the current
+> list and confirm `GEMINI_MODEL` in `.env` isn't pinned to something old.
+
 ### 4. (Optional) Threat-intel keys
 
 - **Google Safe Browsing**: free, needs a Google Cloud project — https://developers.google.com/safe-browsing/v4/get-started

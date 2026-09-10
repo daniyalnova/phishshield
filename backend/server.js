@@ -4,6 +4,17 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
+import dns from "node:dns";
+
+// Some Linux environments (Kali, WSL, various VMs/containers) have broken or
+// missing IPv6 routing. Node's default resolver tries IPv6 first and, on
+// these setups, hangs on that attempt instead of failing fast — which eats
+// the whole request timeout before ever falling back to IPv4. This forces
+// IPv4-first resolution for every outbound request in the app (Gemini,
+// VirusTotal, Safe Browsing, RDAP, ip-api.com), fixing the symptom of a
+// request timing out at exactly its configured timeout value even though
+// the same URL responds instantly via curl.
+dns.setDefaultResultOrder("ipv4first");
 
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
