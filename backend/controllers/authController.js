@@ -2,6 +2,19 @@ import User from "../models/User.js";
 import generateToken from "../utils/generateToken.js";
 import validator from "validator";
 
+// Requires: 8+ chars, at least one uppercase, one lowercase, one digit,
+// and one special character. Rejects the most commonly leaked passwords
+// outright via validator's isStrongPassword rather than a hand-rolled regex.
+function isPasswordStrong(password) {
+  return validator.isStrongPassword(password, {
+    minLength: 8,
+    minLowercase: 1,
+    minUppercase: 1,
+    minNumbers: 1,
+    minSymbols: 1,
+  });
+}
+
 // @route POST /api/auth/register
 export const registerUser = async (req, res) => {
   try {
@@ -13,8 +26,11 @@ export const registerUser = async (req, res) => {
     if (!validator.isEmail(email)) {
       return res.status(400).json({ message: "Invalid email address" });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    if (!isPasswordStrong(password)) {
+      return res.status(400).json({
+        message:
+          "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character.",
+      });
     }
 
     const existing = await User.findOne({ email: email.toLowerCase() });
@@ -44,10 +60,36 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() }).select("+password");
-    if (!user || !(await user.matchPassword(password))) {
+    const user = await User.findOne({ email: email.toLowerCase() }).select(
+      "+password +loginAttempts +lockUntil"
+    );
+
+    // Same generic message whether the account doesn't exist or the
+    // password is wrong — don't leak which one it was.
+    if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
+
+    if (user.isLocked) {
+      const minutesLeft = Math.ceil((user.lockUntil - Date.now()) / 60000);
+      return res.status(423).json({
+        message: `Too many failed login attempts. Try again in ${minutesLeft} minute(s).`,
+      });
+    }
+
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      await user.registerFailedLogin();
+      const attemptsLeft = Math.max(0, 5 - user.loginAttempts);
+      return res.status(401).json({
+        message:
+          attemptsLeft > 0
+            ? `Invalid email or password. ${attemptsLeft} attempt(s) remaining before temporary lockout.`
+            : "Invalid email or password. Account temporarily locked due to repeated failures.",
+      });
+    }
+
+    await user.registerSuccessfulLogin();
 
     res.json({
       _id: user._id,

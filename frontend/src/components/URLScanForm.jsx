@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const URLScanForm = ({ onScan, loading }) => {
-  const [url, setUrl] = useState("");
+const URLScanForm = ({ onScan, loading, initialUrl = "" }) => {
+  const [url, setUrl] = useState(initialUrl);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (initialUrl) setUrl(initialUrl);
+  }, [initialUrl]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

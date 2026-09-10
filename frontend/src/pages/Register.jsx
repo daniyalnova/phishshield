@@ -60,11 +60,14 @@ const Register = () => {
           <input
             type="password"
             required
-            minLength={6}
+            minLength={8}
             style={inputStyle}
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
           />
+          <span style={{ display: "block", fontSize: "12px", color: "var(--paper-dim)", marginTop: "6px" }}>
+            8+ characters, with an uppercase letter, lowercase letter, number, and symbol.
+          </span>
         </label>
 
         {error && <p style={{ color: "var(--coral)", fontSize: "13px", marginTop: "14px" }}>{error}</p>}

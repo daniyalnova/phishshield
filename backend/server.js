@@ -8,6 +8,7 @@ import rateLimit from "express-rate-limit";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import scanRoutes from "./routes/scanRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -39,6 +40,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/scan", scanRoutes);
+app.use("/api/admin", adminRoutes);
 
 // 404 handler
 app.use((req, res) => {

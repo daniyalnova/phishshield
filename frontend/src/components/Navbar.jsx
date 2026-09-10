@@ -86,6 +86,14 @@ const Navbar = () => {
               >
                 History
               </Link>
+              {user.role === "admin" && (
+                <Link
+                  to="/admin"
+                  style={isActive("/admin") ? styles.activeLink : styles.link}
+                >
+                  Admin
+                </Link>
+              )}
             </>
           )}
           {user ? (

@@ -4,6 +4,8 @@ import { analyzeUrl } from "../utils/urlAnalyzer.js";
 import { geolocateDomain } from "../utils/geoLocator.js";
 import { getAiVerdict } from "../utils/aiAnalyzer.js";
 import { analyzeLiveBehavior } from "../utils/browserAnalyzer.js";
+import { checkReputation } from "../utils/reputationChecker.js";
+import { getDomainAgeDays } from "../utils/domainAge.js";
 
 // @route POST /api/scan
 // body: { url, popupBehavior?: { popupsDetected, redirectsDetected, notes } }
@@ -24,12 +26,22 @@ export const scanUrl = async (req, res) => {
 
     const { domain, verdict, riskScore, heuristics } = heuristicResult;
 
-    // Run geolocation + AI analysis + sandboxed live behavior check in parallel
-    const [geo, aiResult, liveBehavior] = await Promise.all([
+    // Run geolocation + AI analysis + sandboxed live behavior + reputation
+    // feeds + domain-age lookup all in parallel
+    const [geo, aiResult, liveBehavior, reputation, domainAgeDays] = await Promise.all([
       geolocateDomain(domain),
       getAiVerdict({ url: normalizedUrl, domain, heuristics, riskScore }),
       analyzeLiveBehavior(normalizedUrl),
+      checkReputation(normalizedUrl),
+      getDomainAgeDays(domain),
     ]);
+
+    heuristics.domainAgeDays = domainAgeDays ?? undefined;
+    if (typeof domainAgeDays === "number" && domainAgeDays < 30) {
+      heuristics.flaggedReasons.push(
+        `Domain was registered only ${domainAgeDays} day(s) ago — very new domains are frequently used for phishing`
+      );
+    }
 
     // Merge server-observed behavior with any client-reported behavior
     const mergedPopupBehavior = {
@@ -54,6 +66,20 @@ export const scanUrl = async (req, res) => {
       finalScore = Math.round((riskScore + (aiResult.confidence || riskScore)) / 2);
     }
 
+    // A hit from a real threat-intel feed is a hard, high-confidence signal —
+    // it overrides heuristic/AI leniency rather than just averaging in.
+    if (reputation.safeBrowsingFlagged || reputation.virusTotalMaliciousCount > 0) {
+      finalVerdict = "phishing";
+      finalScore = Math.max(finalScore, 90);
+    } else if (reputation.virusTotalSuspiciousCount > 2) {
+      finalVerdict = finalVerdict === "safe" ? "suspicious" : finalVerdict;
+      finalScore = Math.max(finalScore, 50);
+    }
+    if (typeof domainAgeDays === "number" && domainAgeDays < 30 && finalVerdict === "safe") {
+      finalVerdict = "suspicious";
+      finalScore = Math.max(finalScore, 35);
+    }
+
     const scan = await ScanHistory.create({
       user: req.user._id,
       originalUrl: url,
@@ -63,6 +89,7 @@ export const scanUrl = async (req, res) => {
       riskScore: finalScore,
       heuristics,
       aiAnalysis: aiResult || undefined,
+      reputation,
       geolocation: geo?.ip ? geo : undefined,
       popupBehavior: mergedPopupBehavior,
     });

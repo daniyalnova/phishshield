@@ -41,6 +41,14 @@ const scanHistorySchema = new mongoose.Schema(
       rawVerdict: String,
     },
 
+    reputation: {
+      safeBrowsingFlagged: Boolean,
+      safeBrowsingThreats: [String],
+      virusTotalMaliciousCount: Number,
+      virusTotalSuspiciousCount: Number,
+      virusTotalTotalEngines: Number,
+    },
+
     geolocation: {
       ip: String,
       country: String,

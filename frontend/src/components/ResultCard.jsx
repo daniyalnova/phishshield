@@ -28,7 +28,7 @@ const Row = ({ label, value }) => (
 
 const ResultCard = ({ scan }) => {
   if (!scan) return null;
-  const { verdict, riskScore, domain, heuristics, aiAnalysis, geolocation, popupBehavior } = scan;
+  const { verdict, riskScore, domain, heuristics, aiAnalysis, geolocation, popupBehavior, reputation } = scan;
 
   return (
     <div
@@ -70,10 +70,30 @@ const ResultCard = ({ scan }) => {
         <Row label="Shortened link" value={heuristics?.isShortenedUrl ? "Yes" : "No"} />
         <Row label="Punycode domain" value={heuristics?.punycode ? "Yes" : "No"} />
         <Row label="URL length" value={`${heuristics?.urlLength} chars`} />
+        {typeof heuristics?.domainAgeDays === "number" && (
+          <Row label="Domain age" value={`${heuristics.domainAgeDays} day(s)`} />
+        )}
         {heuristics?.brandImpersonation?.length > 0 && (
           <Row label="Brand impersonation" value={heuristics.brandImpersonation.join(", ")} />
         )}
       </Section>
+
+      {reputation && (reputation.checked?.safeBrowsing || reputation.checked?.virusTotal) && (
+        <Section title="Threat-intel feeds">
+          {reputation.checked?.safeBrowsing && (
+            <Row
+              label="Google Safe Browsing"
+              value={reputation.safeBrowsingFlagged ? `Flagged (${reputation.safeBrowsingThreats.join(", ")})` : "Clean"}
+            />
+          )}
+          {reputation.checked?.virusTotal && (
+            <Row
+              label="VirusTotal"
+              value={`${reputation.virusTotalMaliciousCount} malicious / ${reputation.virusTotalSuspiciousCount} suspicious of ${reputation.virusTotalTotalEngines} engines`}
+            />
+          )}
+        </Section>
+      )}
 
       {geolocation?.ip && (
         <Section title="Hosting origin">

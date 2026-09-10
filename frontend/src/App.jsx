@@ -1,12 +1,14 @@
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
 import ScanDetails from "./pages/ScanDetails";
+import Admin from "./pages/Admin";
 
 function App() {
   return (
@@ -38,6 +40,14 @@ function App() {
             <ProtectedRoute>
               <ScanDetails />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <Admin />
+            </AdminRoute>
           }
         />
       </Routes>

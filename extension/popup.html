@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>PhishShield</title>
+  <style>
+    :root {
+      --ink: #11141b;
+      --ink-raised: #171b24;
+      --ink-line: #262b38;
+      --paper: #ece9e1;
+      --paper-dim: #a7a9b4;
+      --coral: #ff6b4a;
+      --coral-dim: #4a2c22;
+      --teal: #3ed7b8;
+      --teal-dim: #1d3833;
+      --amber: #f2b84b;
+      --amber-dim: #40331b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      width: 320px;
+      margin: 0;
+      background: var(--ink);
+      color: var(--paper);
+      font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+      font-size: 13px;
+    }
+    .pad { padding: 16px; }
+    h1 {
+      font-size: 15px;
+      margin: 0 0 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); }
+    p.sub { color: var(--paper-dim); margin: 0 0 14px; font-size: 12px; }
+    input {
+      width: 100%;
+      background: var(--ink-raised);
+      border: 1px solid var(--ink-line);
+      border-radius: 4px;
+      color: var(--paper);
+      padding: 8px 10px;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    button {
+      width: 100%;
+      background: var(--teal);
+      color: var(--ink);
+      border: none;
+      border-radius: 4px;
+      padding: 9px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--ink-line);
+      color: var(--paper);
+      margin-top: 6px;
+    }
+    #current-url {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 11px;
+      color: var(--paper-dim);
+      word-break: break-all;
+      background: var(--ink-raised);
+      border-radius: 4px;
+      padding: 8px;
+      margin-bottom: 12px;
+    }
+    #result { margin-top: 14px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .reasons { margin: 10px 0 0; padding-left: 16px; font-size: 12px; line-height: 1.6; }
+    .hidden { display: none; }
+    #error { color: var(--coral); font-size: 12px; margin-top: 8px; }
+    a.link { color: var(--teal); font-size: 11px; }
+  </style>
+</head>
+<body>
+  <div class="pad">
+    <h1><span class="dot"></span> PhishShield</h1>
+    <p class="sub">Check the current page before you trust it.</p>
+
+    <!-- Login view -->
+    <div id="login-view">
+      <input id="email" type="email" placeholder="Email" />
+      <input id="password" type="password" placeholder="Password" />
+      <button id="login-btn">Sign in</button>
+      <p id="login-error" class="hidden" style="color: var(--coral); font-size: 11px; margin-top: 8px;"></p>
+      <p class="sub" style="margin-top: 10px;">
+        No account? <a class="link" href="http://localhost:5173/register" target="_blank">Create one</a>
+      </p>
+    </div>
+
+    <!-- Scan view (shown once logged in) -->
+    <div id="scan-view" class="hidden">
+      <div id="current-url"></div>
+      <button id="scan-btn">Check this page</button>
+      <button id="logout-btn" class="secondary">Sign out</button>
+      <div id="result" class="hidden"></div>
+      <p id="error" class="hidden"></p>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

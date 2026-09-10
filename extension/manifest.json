@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "PhishShield — Link Checker",
+  "version": "1.0.0",
+  "description": "Check the current page, or any link, against PhishShield before you trust it.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Check this page with PhishShield"
+  },
+  "permissions": ["activeTab", "storage", "contextMenus"],
+  "host_permissions": ["http://localhost:5000/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
